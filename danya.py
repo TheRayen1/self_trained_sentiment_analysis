@@ -6,8 +6,8 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import classification_report, accuracy_score
 
-TRAIN_CSV = r"C:\Users\rayen\Desktop\kagggle\train.csv"
-TEST_CSV  = r"C:\Users\rayen\Desktop\kagggle\test.csv"
+TRAIN_CSV = r"train.csv"
+TEST_CSV  = r"test.csv"
 MODEL_PKL = "tweet_sentiment.joblib"
 THRESH_PKL= "neutral_threshold.json"
 
@@ -144,4 +144,5 @@ if __name__ == "__main__":
             if not txt: break
             print(predict_sentiment(txt))
         except KeyboardInterrupt:
+
             break
