@@ -108,7 +108,6 @@ def evaluate_test():
     print(classification_report(test_df.correct, preds, digits=3))
     print("Accuracy:", accuracy_score(test_df.correct, preds))
 
-# ---------- save predictions ----------
 def save_predictions():
     """Create predictions.csv with columns:
        textID, text, correct_sentiment, predicted_sentiment
@@ -133,7 +132,6 @@ def save_predictions():
     print("\nSaved → predictions.csv  (head):")
     print(out.head())
 
-# ---------- run everything ----------
 if __name__ == "__main__":
     evaluate_test()
     save_predictions()
@@ -146,3 +144,4 @@ if __name__ == "__main__":
         except KeyboardInterrupt:
 
             break
+
