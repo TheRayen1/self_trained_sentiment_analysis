@@ -1,4 +1,3 @@
-# sentiment_tool.py
 import pandas as pd, joblib, os, re, string, json
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -11,7 +10,6 @@ TEST_CSV  = r"test.csv"
 MODEL_PKL = "tweet_sentiment.joblib"
 THRESH_PKL= "neutral_threshold.json"
 
-# ---------- helpers ----------
 def clean(text: str) -> str:
     text = re.sub(r"http\S+|@\w+|#\w+", " ", text)
     text = text.translate(str.maketrans("", "", string.punctuation))
@@ -21,9 +19,8 @@ def get_label_map():
     return {"positive":"positive", "pos":"positive", "+":"positive",
             "negative":"negative", "neg":"negative", "-":"negative"}
 
-# ---------- build / load ----------
 def build_model():
-    # 1. read only the columns we care about (Latin-1 to avoid UTF-8 errors)
+    # read only t (textID,text,sentiment)
     train_df = pd.read_csv(TRAIN_CSV, usecols=["textID","text","sentiment"],
                            encoding="latin1")
     train_df = train_df.dropna(subset=["text","sentiment"])
@@ -32,12 +29,11 @@ def build_model():
     train_df = train_df[train_df.sentiment.str.lower().isin(label_map)]
     train_df["label"] = train_df.sentiment.str.lower().map(label_map)
 
-    # 2. split train / val (for threshold tuning)
+    # split train / val (for threshold tuning)
     X_train, X_val, y_train, y_val = train_test_split(
         train_df.text, train_df.label, test_size=0.15, random_state=42,
         stratify=train_df.label)
 
-    # 3. train pipeline
     model = Pipeline([
         ("tfidf", TfidfVectorizer(stop_words="english",
                                   ngram_range=(1,2), min_df=2, max_df=0.9)),
@@ -46,7 +42,7 @@ def build_model():
     model.fit(X_train, y_train)
     print("Validation accuracy (pos/neg):", model.score(X_val, y_val))
 
-    # 4. pick best neutral threshold on validation set
+    #pick best neutral threshold on validation set
     best_thresh, best_f1 = 0.0, 0.0
     for t in [i/100 for i in range(45, 76, 5)]:   # 0.45 → 0.75
         preds = thresh_predict(model, X_val, t)
@@ -59,7 +55,7 @@ def build_model():
     with open(THRESH_PKL, "w") as f:
         json.dump({"threshold": best_thresh}, f)
 
-    # 5. final re-train on FULL training data
+    # final re-train on FULL training data
     model.fit(train_df.text, train_df.label)
     joblib.dump(model, MODEL_PKL)
     return model, best_thresh
@@ -71,9 +67,7 @@ def load_model():
         return model, thresh
     return build_model()
 
-# ---------- threshold-based predict ----------
 def thresh_predict(model, X, threshold):
-    """Return list of labels according to probability threshold."""
     probs = model.predict_proba(X)
     labs  = []
     for row in probs:
@@ -82,7 +76,6 @@ def thresh_predict(model, X, threshold):
         labs.append("neutral" if best_prob < threshold else best_lab)
     return labs
 
-# ---------- public API ----------
 _model, _thresh = load_model()
 
 def predict_sentiment(text: str):
@@ -93,7 +86,7 @@ def predict_sentiment(text: str):
     label = "neutral" if best_prob < _thresh else best_lab
     return {"label": label, "confidence": float(best_prob)}
 
-# ---------- evaluate on official test.csv ----------
+# evaluate on test data
 def evaluate_test():
     test_df = pd.read_csv(TEST_CSV, usecols=["textID","text","sentiment"],
                           encoding="latin1")
@@ -144,4 +137,5 @@ if __name__ == "__main__":
         except KeyboardInterrupt:
 
             break
+
 
